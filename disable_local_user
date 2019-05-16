@@ -68,3 +68,76 @@ archive() {
 	tar -czvf $ARCHIVE /home/$1 2>&1 > /dev/null
 	mv $ARCHIVE $DIRECTORY/$ARCHIVE
 }
+
+
+remove_home() {
+	rm -r /home/$1
+	if [ "$?" -eq 0 ]
+	then
+		echo "Directori home de $1 eliminat."
+	else
+		echo "No s'ha pogut eliminar el directori home de $1" >&2
+	fi
+}
+
+# If the user doesn't supply at least one argument, give them help.
+if [ -z $1 ]
+then
+	usage
+fi
+
+if [ $# -eq 1 ]
+then
+	ID_USUARI=`id -u $1`
+	if [ $ID_USUARI -gt 999 ]
+	then
+		dishable $1
+	fi
+fi
+
+# Parse the options.
+# Loop through all the usernames supplied as arguments.
+# Make sure the UID of the account is at least 1000.
+while getopts :d:r:a: OPTION
+do
+  case $OPTION in
+    d)
+		ID_USUARI=`id -u $OPTARG`
+		if [ "$ID_USUARI" -lt 1000 ]
+		then
+			echo "Usuari $OPTARG amb UID inferior a 1000." >&2
+		else
+			delete $OPTARG
+		fi
+	;;
+	a)
+		ID_USUARI=`id -u $OPTARG`
+		if [ "$ID_USUARI" -lt 1000 ]
+		then
+			echo "Usuari $OPTARG amb UID inferior a 1000." >&2
+		else
+			archive $OPTARG
+		fi
+	;;
+    r)
+		ID_USUARI=`id -u $OPTARG`
+		if [ "$ID_USUARI" -lt 1000 ]
+		then
+			echo "Usuari $OPTARG amb UID inferior a 1000." >&2
+		else
+			remove_home $OPTARG
+		fi
+	;;
+    ?)
+		usage
+	;;
+  esac
+done
+# Remove the options while leaving the remaining arguments.
+shift #$(($OPTIND - 1))
+
+
+dishable $1
+
+# FALTA:
+# Que agafi mes d'una opció
